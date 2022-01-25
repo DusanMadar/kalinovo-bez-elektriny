@@ -1,0 +1,7 @@
+black
+flake8
+flask
+Flask-HTMLmin
+Flask-Pretty
+Frozen-Flask
+requests

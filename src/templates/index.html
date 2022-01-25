@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block title %}Kalinovo 🚫 ⚡ 🔌 {% endblock %}
+
+{% block content %}
+
+<div class="pt-4 pb-4">
+  <p>
+    Výpadky prúdu sú v obci <a href="https://www.kalinovo.sk/" alt="Kalinovo">Kalinovo</a>
+    bežné už roky. <a href="https://www.ssd.sk/">SSD</a> pri kontakte ohľadne výpadkov
+    väčšinou reaguje generickou správou, že na odstránení problému pracujú ...
+  </p>
+</div>
+
+
+<div>
+  <h3>Zaznamenané prerušenia distribúcie elektriny</h3>
+  {% for date, times in data.items() %}
+  {{ date }}
+  <ul>
+    {% for start, stop in times%}
+    <li>{{ start }} - {{ stop }}</li>
+    {% endfor %}
+  </ul>
+{% endfor %}
+</div>
+
+<div class="pt-4">
+  <p>
+    Dáta sú zbierané na zariadení <a href="https://www.raspberrypi.org/">Raspberry Pi</a>,
+    na ktorom je nepretržite spustený software <a href="https://github.com/DusanMadar/raspberry-pi-downtime-monitor">raspberry-pi-downtime-monitor</a>.
+  </p>
+  <div class="alert alert-warning" role="alert">
+    Presnosť časových záznamov je <b>cca 30 sekúnd až 1 minúta</b>
+    <ul class="pt-1">
+      <li>systém každých 30 sekúnd uloží aktuálny čas</li>
+      <li>po výpadku prúdu
+        <ul>
+          <li>sa systém automaticky naštartuje (cca 15 sekúnd)</li>
+          <li>zaznamená posledný známy časový záznam (viď. prvý bod) a čas štartu systému</li>
+        </ul>
+      </li>
+
+
+    </ul>
+  </div>
+</div>
+
+{% endblock %}

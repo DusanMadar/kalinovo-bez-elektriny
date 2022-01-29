@@ -11,9 +11,9 @@
      /path/to/kalinovo-bez-elektriny/src \
      --log-dir-path "/path/to/logs" \
      --log-file-pattern "app.log" && \
-   git add -u && \
-   git commit -m "Update data" && \
-   git push
+   git -C /path/to/kalinovo-bez-elektriny add -u && \
+   git -C /path/to/kalinovo-bez-elektriny commit -m "Update data" && \
+   git -C /path/to/kalinovo-bez-elektriny push
    ```
 
 4. Schedule the deployment with cron, for example

@@ -46,7 +46,7 @@ def build_downtime_data(
     if response.status_code != 200:
         raise ValueError("Failed to get existing data")
 
-    if len(downtime_data) >= len(response.json()):
+    if len(downtime_data) > len(response.json()):
         data_file_path = Path(__file__).parent.parent.absolute().joinpath("data.json")
         with open(data_file_path, "w+") as fd:
             downtime_data = dict(

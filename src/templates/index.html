@@ -15,14 +15,21 @@
 
 <div>
   <h3>Zaznamenané prerušenia distribúcie elektriny</h3>
-  {% for date, times in data.items() %}
-  {{ date }}
-  <ul>
-    {% for start, stop in times%}
-    <li>{{ start }} - {{ stop }}</li>
-    {% endfor %}
-  </ul>
-{% endfor %}
+  {% for year, data in yearly_data.items() %}
+    <details {% if year == current_year %} open {% endif %}>
+      <summary style="font-size: 1.3rem">{{ year }}</summary>
+      {% for date, times in data.items() %}
+      {{ date }}
+      <ul>
+        {% for start, stop in times%}
+        <li>{{ start }} - {{ stop }}</li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+    </details>
+  {% endfor %}
+
+
 </div>
 
 <div class="pt-4">

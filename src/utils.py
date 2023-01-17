@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
+import hashlib
 import json
 from pathlib import Path
 from typing import List
@@ -39,14 +40,15 @@ def build_downtime_data(
             downtime_data[from_.date().isoformat()].append(
                 [from_.time().isoformat(), to_.time().isoformat()]
             )
-
     response = requests.get(
         "https://raw.githubusercontent.com/DusanMadar/kalinovo-bez-elektriny/master/data.json"  # noqa
     )
     if response.status_code != 200:
         raise ValueError("Failed to get existing data")
 
-    if len(downtime_data) > len(response.json()):
+    local_down_time_data_hash = hashlib.md5(json.dumps(downtime_data, sort_keys=True, indent=2).encode('utf-8')).hexdigest()
+    response_downtime_data_hash = hashlib.md5(json.dumps(response.json(), sort_keys=True, indent=2).encode('utf-8')).hexdigest()
+    if local_down_time_data_hash != response_downtime_data_hash:
         data_file_path = Path(__file__).parent.parent.absolute().joinpath("data.json")
         with open(data_file_path, "w+") as fd:
             downtime_data = dict(

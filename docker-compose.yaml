@@ -1,0 +1,24 @@
+version: '3.7'
+
+services:
+  app:
+    build: .
+    image: kalinovo_bez_elektriny
+    entrypoint:
+      - flask
+      - --debug
+      - run
+      - --host
+      - 0.0.0.0
+      - --extra-files
+      - src/templates/
+    environment:
+      - FLASK_APP=src/app
+    volumes:
+      - .:/code
+      - web_vscode_server_extensions:/root/.vscode-server/extensions
+    ports:
+      - 5000:5000
+
+volumes:
+  web_vscode_server_extensions:

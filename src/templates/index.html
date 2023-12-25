@@ -15,23 +15,127 @@
 
 <div>
   <h3>Zaznamenané prerušenia distribúcie elektriny</h3>
-  {% for year, data in yearly_data.items() %}
-    <details {% if year == current_year %} open {% endif %}>
-      <summary style="font-size: 1.3rem">{{ year }}</summary>
-      {% for date, times in data.items() %}
-      {{ date }}
-      <ul>
-        {% for start, stop in times%}
-        <li>{{ start }} - {{ stop }}</li>
-        {% endfor %}
-      </ul>
-      {% endfor %}
-    </details>
+    {% for year, data in yearly_data.items() %}
+    <div class="accordion accordion-flush" id="accordionFlush">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading-{{ year }}" style="border-bottom: 0.1rem solid;">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ year}}" aria-expanded="false" aria-controls="collapse-{{ year}}">
+            {{ year }}
+          </button>
+        </h2>
+        <div id="collapse-{{ year}}" class="accordion-collapse collapse {% if year == current_year %} show {% endif %}" aria-labelledby="heading-{{ year }}" data-bs-parent="#accordionFlush">
+          <div class="accordion-body">
+            <div class="row">
+              <div class="col">
+                {% for date, times in data.items() %}
+                  {{ date }}
+                  <ul style="padding-left: 1.5rem;">
+                    {% for start, stop in times%}
+                    <li>{{ start }} - {{ stop }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endfor %}
+              </div>
+
+              <div class="col">
+                <div class="row">
+                  <div class="col">
+                    Počet výpadkov
+                  </div>
+                  <div class="col" style="font-size: 1.5rem">
+                    <b>{{ yearly_totals[year].count }}</b>
+                  </div>
+                </div>
+
+                &nbsp;
+
+                <div class="row">
+                  <div class="col">
+                    Počet dní
+                  </div>
+                  <div class="col" style="font-size: 1.5rem">
+                    <b>{{ yearly_totals[year].days }}</b>
+                  </div>
+                </div>
+
+                &nbsp;
+
+                <div class="row">
+                  <div class="col">
+                    Mesačný priemer
+                  </div>
+                  <div class="col" style="font-size: 1.5rem">
+                    <b>{{ yearly_totals[year].monthly_average }}</b>
+                  </div>
+                </div>
+
+                <p>---</p>
+
+                <div class="row">
+                  <div class="col">
+                    00:00 - 06:00
+                  </div>
+                  <div class="col">
+                    <b style="font-size: 1.25rem">{{ yearly_totals[year].time_ranges.night }}</b>
+                  </div>
+                </div>
+
+                &nbsp;
+
+                <div class="row">
+                  <div class="col">
+                    06:01 - 12:00
+                  </div>
+                  <div class="col">
+                    <b style="font-size: 1.25rem">{{ yearly_totals[year].time_ranges.morning }}</b>
+                  </div>
+                </div>
+
+                &nbsp;
+
+                <div class="row">
+                  <div class="col">
+                    12:01 - 18:00
+                  </div>
+                  <div class="col">
+                    <b style="font-size: 1.25rem">{{ yearly_totals[year].time_ranges.day }}</b>
+                  </div>
+                </div>
+
+                &nbsp;
+
+                <div class="row">
+                  <div class="col">
+                    18:01 - 23:59
+                  </div>
+                  <div class="col">
+                    <b style="font-size: 1.25rem">{{ yearly_totals[year].time_ranges.evening }}</b>
+                  </div>
+                </div>
+
+                <p>---</p>
+
+                {% for weekday, count in yearly_totals[year].weekday_count.items() %}
+                <div class="row">
+                  <div class="col">
+                    {{ weekday }}
+                  </div>
+                  <div class="col">
+                    <b style="font-size: 1.05rem">{{ count }}</b>
+                  </div>
+                </div>
+                &nbsp;
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   {% endfor %}
-
-
 </div>
 
+&nbsp;
 <div class="pt-4">
   <p>
     Dáta sú zbierané na zariadení <a href="https://www.raspberrypi.org/">Raspberry Pi</a>,

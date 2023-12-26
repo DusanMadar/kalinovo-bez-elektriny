@@ -19,62 +19,64 @@ app.jinja_env.add_extension("jinja2.ext.do")
 Prettify(app)
 HTMLMIN(app)
 
+WEEKDAYS = ["Pondelok", "Utorok", "Streda", "Štvrtok", "Piatok", "Sobota", "Nedeľa"]
+
 
 @app.route("/")
 def index():
     with open(Path(__file__).parent.parent.absolute().joinpath("data.json"), "r") as fd:
         data = json.load(fd)
 
-    yearly_data = defaultdict(dict)
-    for date_, times in data.items():
-        year = date_.split("-")[0]
-        yearly_data[int(year)][date_] = times
+    per_year_outages = defaultdict(dict)
+    for date_, daily_data in data.items():
+        year = int(date_.split("-")[0])
+        per_year_outages[year][date_] = daily_data
 
-    yearly_totals = {}
-    weekdays = ["Pondelok", "Utorok", "Streda", "Štvrtok", "Piatok", "Sobota", "Nedeľa"]
-
-    for year, daily_data in yearly_data.items():
-        months = set()
-        weekday_count = {weekday: 0 for weekday in weekdays}
-        for date_, data in daily_data.items():
-            months.add(date_.split("-")[1])
-            weekday = date.fromisoformat(date_).weekday()
-            weekday_count[weekdays[weekday]] += len(data)
-
+    per_year_outages_agg = {}
+    for year, daily_data in per_year_outages.items():
         total_count = 0
-        time_ranges = defaultdict(int)
-        for data in daily_data.values():
-            total_count += len(data)
-            for outage_start, _ in data:
+        weekday_count = {weekday: 0 for weekday in WEEKDAYS}
+        time_ranges = {
+            "00:00 - 06:00": 0,
+            "06:01 - 12:00": 0,
+            "12:01 - 18:00": 0,
+            "18:01 - 23:59": 0,
+        }
+
+        for date_, times in daily_data.items():
+            per_day_outages_count = len(times)
+            total_count += per_day_outages_count
+
+            weekday = date.fromisoformat(date_).weekday()
+            weekday_count[WEEKDAYS[weekday]] += per_day_outages_count
+
+            for outage_start, _ in times:
                 if "00:00:00" <= outage_start <= "06:00:00":
-                    key= "night"
+                    key= "00:00 - 06:00"
                 elif "06:00:01" <= outage_start <= "12:00:00":
-                    key = "morning"
+                    key = "06:01 - 12:00"
                 elif "12:00:01" <= outage_start <= "18:00:00":
-                    key = "day"
+                    key = "12:01 - 18:00"
                 elif "18:00:01" <= outage_start:
-                    key = "evening"
+                    key = "18:01 - 23:59"
 
                 time_ranges[key] += 1
 
-        monthly_average = round(total_count / len(months), 2)
-        monthly_average = (
-            monthly_average if not monthly_average.is_integer() else int(monthly_average)
-        )
-        yearly_totals[year] = {
-            "days": len(daily_data),
-            "count": total_count,
-            "monthly_average": monthly_average,
+        per_year_outages_agg[year] = {
+            "counts": {
+                "Počet výpadkov": total_count,
+                "Počet dní": len(daily_data),
+            },
             "time_ranges": time_ranges,
-            "weekday_count": weekday_count,
-
+            "weekday_count": {k: v for k, v in weekday_count.items() if v},
         }
+
 
     now = datetime.now()
     return render_template(
         "index.html",
-        yearly_data=yearly_data,
-        yearly_totals=yearly_totals,
+        per_year_outages=per_year_outages,
+        per_year_outages_agg=per_year_outages_agg,
         current_year=now.year,
         updated_at=now.isoformat(" ", "minutes"),
     )

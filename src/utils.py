@@ -99,7 +99,8 @@ def downtime_data_updated(
     public_data = get_public_data()
 
     for date_, outage_periods in downtime_data.items():
-        if published_outage_periods := public_data.get(date_):
+        published_outage_periods = public_data.get(date_)
+        if published_outage_periods:
             for outage_period in outage_periods:
                 if outage_period not in published_outage_periods:
                     public_data[date_].add(outage_period)

@@ -2,14 +2,14 @@ import csv
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Set, Tuple
 
 import requests
 
 CSV_DATA_PATH = Path(__file__).parent.parent.absolute().joinpath("data.csv")
 
 
-def csv_to_dict() -> dict[str, list[list[str]]]:
+def csv_to_dict() -> Dict[str, List[List[str]]]:
     data = defaultdict(list)
 
     with open(CSV_DATA_PATH, "r") as csv_file:
@@ -20,7 +20,7 @@ def csv_to_dict() -> dict[str, list[list[str]]]:
     return data
 
 
-def dict_to_csv(data: dict[str, list[list[str]]]) -> None:
+def dict_to_csv(data: Dict[str, List[List[str]]]) -> None:
     with open(CSV_DATA_PATH, "w", newline="") as csv_file:
         fieldnames = ["date", "start_time", "end_time"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
@@ -51,7 +51,7 @@ def extract_downtime_data(log_file_path: str, kind: str) -> List[List[datetime]]
         ]
 
 
-def get_public_data() -> dict[str, set[tuple[str, str]]]:
+def get_public_data() -> Dict[str, Set[Tuple[str, str]]]:
     response = requests.get(
         "https://raw.githubusercontent.com/DusanMadar/kalinovo-bez-elektriny/master/data.csv"  # noqa
     )
@@ -74,7 +74,7 @@ def get_public_data() -> dict[str, set[tuple[str, str]]]:
 
 def collect_downtime_data(
     log_dir_path: str, log_file_pattern: str, kind: str
-) -> dict[str, list[tuple[str, str]]]:
+) -> Dict[str, List[Tuple[str, str]]]:
     downtime_data = defaultdict(list)
 
     for log_file in get_log_files(log_dir_path, log_file_pattern):

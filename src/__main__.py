@@ -1,7 +1,7 @@
 import argparse
 
 from src import freeze
-from src.utils import build_downtime_data
+from src.utils import downtime_data_updated
 
 
 def get_arg_parser() -> argparse.ArgumentParser:
@@ -15,7 +15,7 @@ def main() -> None:
     parser = get_arg_parser()
     args = parser.parse_args()
 
-    if build_downtime_data(args.log_dir_path, args.log_file_pattern):
+    if downtime_data_updated(args.log_dir_path, args.log_file_pattern):
         freeze.main()
 
 

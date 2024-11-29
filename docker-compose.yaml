@@ -16,9 +16,9 @@ services:
       - FLASK_APP=src/app
     volumes:
       - .:/code
-      - web_vscode_server_extensions:/root/.vscode-server/extensions
+      - web_vscode_server:/root/.vscode-server
     ports:
       - 5000:5000
 
 volumes:
-  web_vscode_server_extensions:
+  web_vscode_server:

@@ -1,11 +1,11 @@
-import json
 from collections import defaultdict
 from datetime import date, datetime
-from pathlib import Path
 
 from flask import Flask, render_template
 from flask_htmlmin import HTMLMIN
 from flask_pretty import Prettify
+
+from src.utils import csv_to_dict
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -24,8 +24,7 @@ WEEKDAYS = ["Pondelok", "Utorok", "Streda", "Štvrtok", "Piatok", "Sobota", "Ned
 
 @app.route("/")
 def index():
-    with open(Path(__file__).parent.parent.absolute().joinpath("data.json"), "r") as fd:
-        data = json.load(fd)
+    data = csv_to_dict()
 
     per_year_outages = defaultdict(dict)
     for date_, daily_data in data.items():
@@ -52,7 +51,7 @@ def index():
 
             for outage_start, _ in times:
                 if "00:00:00" <= outage_start <= "06:00:00":
-                    key= "00:00 - 06:00"
+                    key = "00:00 - 06:00"
                 elif "06:00:01" <= outage_start <= "12:00:00":
                     key = "06:01 - 12:00"
                 elif "12:00:01" <= outage_start <= "18:00:00":
@@ -70,7 +69,6 @@ def index():
             "time_ranges": time_ranges,
             "weekday_count": {k: v for k, v in weekday_count.items() if v},
         }
-
 
     now = datetime.now()
     return render_template(

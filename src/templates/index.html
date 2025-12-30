@@ -6,15 +6,57 @@
 
 <div class="pt-4 pb-4">
   <p>
-    Výpadky prúdu sú v obci <a href="https://www.kalinovo.sk/" alt="Kalinovo">Kalinovo</a>
-    bežné už roky. <a href="https://www.ssd.sk/">SSD</a> pri kontakte ohľadne výpadkov
-    väčšinou reaguje generickou správou, že na odstránení problému pracujú ...
+    V obci <a href="https://www.kalinovo.sk/" alt="Kalinovo">Kalinovo</a>
+    často vypadáva elektrina. Tento web zobrazuje zaznamenané prerušenia.
   </p>
 </div>
 
 <div>
   <h3>Zaznamenané prerušenia distribúcie elektriny</h3>
-    {% for year, daily_data in per_year_outages.items() %}
+
+  <div class="mb-4">
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" id="chartTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="yearly-tab" data-bs-toggle="tab" data-bs-target="#yearly" type="button" role="tab" aria-controls="yearly" aria-selected="false">
+          Ročný prehľad
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="by-year-tab" data-bs-toggle="tab" data-bs-target="#by-year" type="button" role="tab" aria-controls="by-year" aria-selected="true">
+          Mesačný prehľad
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab" aria-controls="daily" aria-selected="false">
+          Denný prehľad
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="hourly-tab" data-bs-toggle="tab" data-bs-target="#hourly" type="button" role="tab" aria-controls="hourly" aria-selected="false">
+          Hodinový prehľad
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab content -->
+    <div class="tab-content pt-3" id="chartTabsContent">
+      <div class="tab-pane fade" id="yearly" role="tabpanel" aria-labelledby="yearly-tab">
+        <canvas id="yearlyTotalsChart"></canvas>
+      </div>
+      <div class="tab-pane fade show active" id="by-year" role="tabpanel" aria-labelledby="by-year-tab">
+        <canvas id="monthlyByYearChart"></canvas>
+      </div>
+      <div class="tab-pane fade" id="daily" role="tabpanel" aria-labelledby="daily-tab">
+        <canvas id="dailyByYearChart"></canvas>
+      </div>
+      <div class="tab-pane fade" id="hourly" role="tabpanel" aria-labelledby="hourly-tab">
+        <canvas id="hourlyByYearChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+    {% for year, daily_data in outages_by_year_and_day.items() %}
     <div class="accordion accordion-flush" id="accordionFlush">
       <div class="accordion-item">
         <h2 class="accordion-header" id="heading-{{ year }}" style="border-bottom: 0.1rem solid;">
@@ -37,7 +79,7 @@
               </div>
 
               <div class="col">
-                {% for key, count in per_year_outages_agg[year].counts.items() %}
+                {% for key, count in outages_by_year_and_day_agg[year].counts.items() %}
                 <div class="row">
                   <div>
                     <span class="float-end float-md-start">{{ key }}</span>
@@ -50,7 +92,7 @@
 
                 &nbsp;
 
-                {% for time_range, count in per_year_outages_agg[year].time_ranges.items() %}
+                {% for time_range, count in outages_by_year_and_day_agg[year].time_ranges.items() %}
                 <div class="row">
                   <div>
                     <span class="float-end float-md-start">{{ time_range }}</span>
@@ -63,7 +105,7 @@
 
                 &nbsp;
 
-                {% for weekday, count in per_year_outages_agg[year].weekday_count.items() %}
+                {% for weekday, count in outages_by_year_and_day_agg[year].weekday_count.items() %}
                 <div class="row">
                   <div>
                     <span class="float-end float-md-start">{{ weekday }}</span>
@@ -102,4 +144,221 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Simple color palette
+const colors = [
+  '#e74c3c', // red
+  '#3498db', // blue
+  '#2ecc71', // green
+  '#f39c12', // orange
+  '#9b59b6', // purple
+  '#1abc9c'  // teal
+];
+
+const commonOptions = {
+  responsive: true,
+  interaction: {
+    intersect: false,
+    mode: 'index'
+  },
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top'
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        stepSize: 1
+      },
+      title: {
+        display: true,
+        text: 'Počet výpadkov'
+      }
+    },
+    x: {
+      title: {
+        display: true,
+        text: 'Mesiac'
+      }
+    }
+  }
+};
+
+// Chart 1: Yearly totals (bar chart)
+const yearlyTotalsData = {{ yearly_totals_chart | tojson }};
+
+// Use the same color palette for consistency
+const barColors = yearlyTotalsData.labels.map((_, index) => colors[index % colors.length]);
+const barBackgroundColors = barColors.map(color => color.replace(')', ', 0.7)').replace('rgb', 'rgba'));
+
+const yearlyTotalsDatasets = yearlyTotalsData.datasets.map((dataset) => ({
+  label: dataset.label,
+  data: dataset.data,
+  backgroundColor: barBackgroundColors,
+  borderColor: barColors,
+  borderWidth: 2
+}));
+
+new Chart(document.getElementById('yearlyTotalsChart'), {
+  type: 'bar',
+  data: {
+    labels: yearlyTotalsData.labels,
+    datasets: yearlyTotalsDatasets
+  },
+  options: {
+    responsive: true,
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 10
+        },
+        title: {
+          display: true,
+          text: 'Počet výpadkov'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Rok'
+        }
+      }
+    }
+  }
+});
+
+// Chart 2: Monthly outages by year
+const monthlyByYearData = {{ monthly_by_year_chart | tojson }};
+const monthlyByYearDatasets = monthlyByYearData.datasets.map((dataset, index) => ({
+  label: dataset.label,
+  data: dataset.data,
+  borderColor: colors[index % colors.length],
+  tension: 0.1,
+  fill: false
+}));
+
+new Chart(document.getElementById('monthlyByYearChart'), {
+  type: 'line',
+  data: {
+    labels: monthlyByYearData.labels,
+    datasets: monthlyByYearDatasets
+  },
+  options: commonOptions
+});
+
+// Chart 3: Daily (weekday) overview by year
+const dailyByYearData = {{ daily_by_year_chart | tojson }};
+const dailyByYearDatasets = dailyByYearData.datasets.map((dataset, index) => ({
+  label: dataset.label,
+  data: dataset.data,
+  borderColor: colors[index % colors.length],
+  tension: 0.1,
+  fill: false
+}));
+
+new Chart(document.getElementById('dailyByYearChart'), {
+  type: 'line',
+  data: {
+    labels: dailyByYearData.labels,
+    datasets: dailyByYearDatasets
+  },
+  options: {
+    responsive: true,
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
+        },
+        title: {
+          display: true,
+          text: 'Počet výpadkov'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Deň v týždni'
+        }
+      }
+    }
+  }
+});
+
+// Chart 4: Hourly (time range) overview by year
+const hourlyByYearData = {{ hourly_by_year_chart | tojson }};
+const hourlyByYearDatasets = hourlyByYearData.datasets.map((dataset, index) => ({
+  label: dataset.label,
+  data: dataset.data,
+  borderColor: colors[index % colors.length],
+  tension: 0.1,
+  fill: false
+}));
+
+new Chart(document.getElementById('hourlyByYearChart'), {
+  type: 'line',
+  data: {
+    labels: hourlyByYearData.labels,
+    datasets: hourlyByYearDatasets
+  },
+  options: {
+    responsive: true,
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
+        },
+        title: {
+          display: true,
+          text: 'Počet výpadkov'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Rozsah času'
+        }
+      }
+    }
+  }
+});
+</script>
 {% endblock %}

@@ -118,3 +118,37 @@ def downtime_data_updated(
         dict_to_csv(sorted_data)
 
     return data_updated
+
+
+def year_summary():
+    import csv
+    import statistics
+    from collections import Counter
+    from datetime import datetime
+
+    # File path
+    file_path = "2024.csv"
+
+    # Read the CSV and extract months
+    month_counts = Counter()
+    with open(file_path, "r") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            date = datetime.strptime(row["date"], "%Y-%m-%d")
+            month_counts[date.month] += 1
+
+    # Find the months with minimum and maximum records
+
+    min_month, min_count = min(month_counts.items(), key=lambda x: x[1])
+    max_month, max_count = max(month_counts.items(), key=lambda x: x[1])
+
+    # Calculate average and median
+    counts = list(month_counts.values())
+    average = sum(counts) / len(counts)
+    median = statistics.median(counts)
+
+    # Print results
+    print(f"Month with min records: {min_month} ({min_count} records)")
+    print(f"Month with max records: {max_month} ({max_count} records)")
+    print(f"Average records per month: {average:.2f}")
+    print(f"Median records per month: {median}")

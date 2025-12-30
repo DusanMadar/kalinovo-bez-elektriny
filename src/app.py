@@ -19,20 +19,51 @@ app.jinja_env.add_extension("jinja2.ext.do")
 Prettify(app)
 HTMLMIN(app)
 
-WEEKDAYS = ["Pondelok", "Utorok", "Streda", "Štvrtok", "Piatok", "Sobota", "Nedeľa"]
+WEEKDAYS = [
+    "Pondelok",
+    "Utorok",
+    "Streda",
+    "Štvrtok",
+    "Piatok",
+    "Sobota",
+    "Nedeľa",
+]
+MONTHS = [
+    "Január",
+    "Február",
+    "Marec",
+    "Apríl",
+    "Máj",
+    "Jún",
+    "Júl",
+    "August",
+    "September",
+    "Október",
+    "November",
+    "December",
+]
 
 
 @app.route("/")
 def index():
     data = csv_to_dict()
 
-    per_year_outages = defaultdict(dict)
+    outages_by_year_and_day = defaultdict(dict)
+    outages_by_year_and_month = defaultdict(lambda: defaultdict(int))
     for date_, daily_data in data.items():
-        year = int(date_.split("-")[0])
-        per_year_outages[year][date_] = daily_data
+        date_parts = date_.split("-")
+        year = int(date_parts[0])
+        month = int(date_parts[1])
 
-    per_year_outages_agg = {}
-    for year, daily_data in per_year_outages.items():
+        # Not enough data before 2022.
+        if year < 2022:
+            continue
+
+        outages_by_year_and_day[year][date_] = daily_data
+        outages_by_year_and_month[year][month] += len(daily_data)
+
+    outages_by_year_and_day_agg = {}
+    for year, daily_data in outages_by_year_and_day.items():
         total_count = 0
         weekday_count = {weekday: 0 for weekday in WEEKDAYS}
         time_ranges = {
@@ -61,7 +92,7 @@ def index():
 
                 time_ranges[key] += 1
 
-        per_year_outages_agg[year] = {
+        outages_by_year_and_day_agg[year] = {
             "counts": {
                 "Počet výpadkov": total_count,
                 "Počet dní": len(daily_data),
@@ -70,11 +101,66 @@ def index():
             "weekday_count": {k: v for k, v in weekday_count.items() if v},
         }
 
+    # Prepare chart data with separate datasets per year
+    monthly_by_year_chart = {"labels": MONTHS, "datasets": []}
+
+    years = sorted(outages_by_year_and_month.keys())
+
+    for year in years:
+        year_data = outages_by_year_and_month[year]
+        # Create array with data for all 12 months (0 if no data)
+        data_for_year = [year_data.get(month, 0) for month in range(1, 13)]
+
+        monthly_by_year_chart["datasets"].append({
+            "label": str(year),
+            "data": data_for_year
+        })
+
+    years_for_yearly_chart = [y for y in sorted(outages_by_year_and_day_agg.keys())]
+    yearly_totals_chart = {
+        "labels": [str(year) for year in years_for_yearly_chart],
+        "datasets": [{
+            "label": "Počet výpadkov",
+            "data": [outages_by_year_and_day_agg[year]["counts"]["Počet výpadkov"]
+                     for year in years_for_yearly_chart]
+        }]
+    }
+
+    # Chart 3: Daily (weekday) overview by year (2022+)
+    daily_by_year_chart = {"labels": WEEKDAYS, "datasets": []}
+
+    for year in sorted([y for y in outages_by_year_and_day_agg.keys()]):
+        weekday_data = outages_by_year_and_day_agg[year]["weekday_count"]
+        # Create array with data for all 7 weekdays (0 if no data)
+        data_for_year = [weekday_data.get(weekday, 0) for weekday in WEEKDAYS]
+        daily_by_year_chart["datasets"].append({
+            "label": str(year),
+            "data": data_for_year
+        })
+
+    # Chart 4: Hourly (time range) overview by year (2022+)
+    time_range_labels = ["00:00 - 06:00", "06:01 - 12:00", "12:01 - 18:00", "18:01 - 23:59"]
+    hourly_by_year_chart = {"labels": time_range_labels, "datasets": []}
+
+    for year in sorted([y for y in outages_by_year_and_day_agg.keys()]):
+        time_range_data = outages_by_year_and_day_agg[year]["time_ranges"]
+        # Create array with data for all 4 time ranges
+        data_for_year = [time_range_data.get(time_range, 0) for time_range in time_range_labels]
+        hourly_by_year_chart["datasets"].append({
+            "label": str(year),
+            "data": data_for_year
+        })
+
     now = datetime.now()
+
     return render_template(
         "index.html",
-        per_year_outages=per_year_outages,
-        per_year_outages_agg=per_year_outages_agg,
+        outages_by_year_and_day=outages_by_year_and_day,
+        outages_by_year_and_day_agg=outages_by_year_and_day_agg,
+        monthly_by_year_chart=monthly_by_year_chart,
+        yearly_totals_chart=yearly_totals_chart,
+        daily_by_year_chart=daily_by_year_chart,
+        hourly_by_year_chart=hourly_by_year_chart,
         current_year=now.year,
         updated_at=now.isoformat(" ", "minutes"),
     )
